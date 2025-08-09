@@ -5,11 +5,16 @@ import { green } from "picocolors";
 import { PRE_BUNDLE_DIR } from "../const";
 import { preBundlePlugin } from "./preBundlePlugin";
 
+/**
+ * 依赖预构建，将对第三方依赖进行打包
+ * @param root 执行命令的工作目录
+ */
 export async function optimizer(root: string) {
   // 1. 预构建入口，这里假设是 /src/main.tsx
   const entry = path.resolve(root, "src/main.tsx");
-  // 2. 从入口处扫描依赖
   const deps = new Set<string>();
+  
+  // 2. 从入口处扫描依赖
   await build({
     entryPoints: [entry],
     // 开启打包，才会递归分析依赖，否则只会解析入口文件
@@ -25,8 +30,10 @@ export async function optimizer(root: string) {
       .map((item) => `  ${item}`)
       .join(`\n`)}`
   );
+
   // 3. 预构建依赖
   await build({
+    // 注意这里要把入口设置为dpes，这样onResolve时其importer才会变成空字符串
     entryPoints: [...deps],
     write: true,
     bundle: true,

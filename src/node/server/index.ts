@@ -1,10 +1,23 @@
-// connect 是一个具有中间件机制的轻量级 Node.js 框架。
-// 既可以单独作为服务器，也可以接入到任何具有中间件机制的框架中，如 Koa、Express
 import connect from "connect";
-// picocolors 是一个用来在命令行显示不同颜色文本的工具
 import { blue, green } from "picocolors";
 
 import { optimizer } from "../optimizer";
+import { createPluginContainer, PluginContainer } from "../pluginContainer";
+import { Plugin } from "../plugin";
+import { resolvePlugins } from "../plugins";
+import { indexHtmlMiddware } from "./middlewares/indexHtml";
+import { transformMiddleWare } from "./middlewares/transform";
+
+export interface ServerContext {
+  /** server 启动的工作目录 */
+  root: string;
+  /** 插件容器 */
+  pluginContainer: PluginContainer;
+  /** connect 服务器对象 */
+  app: connect.Server;
+  /** 服务器插件 */
+  plugins: Plugin[];
+}
 
 export async function startDevServer() {
   const app = connect();
@@ -12,6 +25,26 @@ export async function startDevServer() {
   const root = process.cwd();
   const startTime = Date.now();
 
+  // 引入插件
+  const plugins = resolvePlugins();
+  const pluginContainer = createPluginContainer(plugins);
+
+  const serverContext: ServerContext = {
+    root: process.cwd(),
+    app,
+    pluginContainer,
+    plugins,
+  };
+
+  for (const plugin of plugins) {
+    if (plugin.configureServer) {
+      await plugin.configureServer(serverContext);
+    }
+  }
+  // 核心编译逻辑（js文件）
+  app.use(transformMiddleWare(serverContext))
+  // 入口 HTML
+  app.use(indexHtmlMiddware(serverContext))
   app.listen(3000, async () => {
     await optimizer(root);
     console.log(

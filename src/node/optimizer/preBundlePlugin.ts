@@ -4,7 +4,7 @@ import { init, parse } from "es-module-lexer";
 import createDebug from "debug";
 import fs from "fs-extra";
 import path from "path";
-// node 路径解析
+// node 路径解析算法库，用于解析模块路径
 import resolve from "resolve";
 import { BARE_IMPORT_RE } from "../const";
 import { normalizePath } from "../../utils";
@@ -30,8 +30,7 @@ export function preBundlePlugin(deps: Set<string>): Plugin {
                   namespace: "dep",
                 }
               : {
-                  // 对于二次依赖，🔑 将模块名解析为真实路径
-                  // 不会将其传递给 load 钩子生成代理模块
+                  // 对于二次依赖，将模块名解析为真实路径，不会将其传递给 load 钩子生成代理模块
                   path: resolve.sync(id, { basedir: process.cwd() }),
                 };
           }
@@ -56,7 +55,7 @@ export function preBundlePlugin(deps: Set<string>): Plugin {
           // parse 获得 import 和 export 语句的数组，如果是 cjs 则两个变量都为空数组
           const [importer, exports] = await parse(code);
 
-          // 取从工作目录 root 到依赖入口 entryPath 的相对路径，并把反斜杠 | 换成 /
+          // 取从工作目录 root 到依赖入口 entryPath 的相对路径，并把反斜杠 \ 换成 /
           // './node_modules/react/index.js'
           let relativePath = normalizePath(path.relative(root, entryPath));
 
@@ -71,7 +70,7 @@ export function preBundlePlugin(deps: Set<string>): Plugin {
           // 相当于有一个中转的桶，将所有依赖用 esm 规范导入并导出
           // 所以称之为代理模块
           let proxyModule = [];
-          // cjs
+          // cjs 规范没有 import 和 export 语句
           if (!importer.length && !exports.length) {
             // 动态获取这个 cjs 模块的导出内容
             // res = { Component: function, createElement: function, ... }
