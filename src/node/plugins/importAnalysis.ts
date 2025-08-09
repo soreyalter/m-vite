@@ -31,12 +31,25 @@ export function importAnalysisPlugin(): Plugin {
         const { s: modeStart, e: modEnd, n: modSource } = importInfo;
         if (!modSource) continue;
 
+        // 给 .svg 导入路径结尾加上一个 "?import" 标记
+        if (modSource.endsWith(".svg")) {
+          // 求一个标准化的相对路径
+          const resolvedUrl = normalizePath(
+            path.relative(
+              path.dirname(id),
+              path.resolve(path.dirname(id), modSource)
+            )
+          );
+          ms.overwrite(modeStart, modEnd, `./${resolvedUrl}?import`);
+          continue;
+        }
+
         // 第三方库（裸导入）：from 路径重写为预构建产物的路径
         if (BARE_IMPORT_RE.test(modSource)) {
           const bundlePath = normalizePath(
             path.join("/", PRE_BUNDLE_DIR, `${modSource}.js`)
           );
-          
+
           ms.overwrite(modeStart, modEnd, bundlePath);
         } else if (modSource.startsWith(".") || modSource.startsWith("/")) {
           // 使用插件上下文的 resolve 方法，自动经过路径解析插件的处理

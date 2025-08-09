@@ -7,6 +7,7 @@ import { Plugin } from "../plugin";
 import { resolvePlugins } from "../plugins";
 import { indexHtmlMiddware } from "./middlewares/indexHtml";
 import { transformMiddleWare } from "./middlewares/transform";
+import { staticMiddleWare } from "./middlewares/static";
 
 export interface ServerContext {
   /** server 启动的工作目录 */
@@ -45,6 +46,9 @@ export async function startDevServer() {
   app.use(transformMiddleWare(serverContext))
   // 入口 HTML
   app.use(indexHtmlMiddware(serverContext))
+  // 处理具体静态资源的中间件
+  app.use(staticMiddleWare())
+
   app.listen(3000, async () => {
     await optimizer(root);
     console.log(

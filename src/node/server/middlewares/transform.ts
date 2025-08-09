@@ -2,7 +2,7 @@ import { NextHandleFunction } from "connect";
 
 import createDebug from "debug";
 
-import { cleanUrl, isJSRequest } from "../../../utils";
+import { cleanUrl, isCssRequest, isImportRequset, isJSRequest } from "../../../utils";
 import { ServerContext } from "..";
 import debug from "debug";
 
@@ -63,8 +63,8 @@ export function transformMiddleWare(
     const url = req.url
     debug('transformMiddleware: ' + url)
 
-    // 转换 js 请求
-    if (isJSRequest(url)) {
+    // 转换 各种请求
+    if (isJSRequest(url) || isCssRequest(url) || isImportRequset(url)) {
       let result = await transfromRequest(url, serverContext)
       if (!result) {
         return next()
