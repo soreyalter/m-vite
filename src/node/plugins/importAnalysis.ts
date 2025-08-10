@@ -25,6 +25,11 @@ export function importAnalysisPlugin(): Plugin {
       const [imports] = parse(code);
       const ms = new MagicString(code);
 
+      // 在 transformRequest 时已经注册过新的 ModuleNode 这里必然能 get 到
+      const { moduleGraph } = serverContext;
+      const curMod = moduleGraph.getModuleById(id)!;
+      const importedModules = new Set<string>();
+
       for (const importInfo of imports) {
         // 比如 const str = `import React from 'react'`
         // str.slice(s, e) => 'react', n === 'react'
@@ -49,17 +54,23 @@ export function importAnalysisPlugin(): Plugin {
           const bundlePath = normalizePath(
             path.join("/", PRE_BUNDLE_DIR, `${modSource}.js`)
           );
+          importedModules.add(bundlePath);
 
           ms.overwrite(modeStart, modEnd, bundlePath);
-        } else if (modSource.startsWith(".") || modSource.startsWith("/")) {
-          // 使用插件上下文的 resolve 方法，自动经过路径解析插件的处理
+        }
+        // 非裸导入，一般是业务代码文件
+        else if (modSource.startsWith(".") || modSource.startsWith("/")) {
+          // 使用插件容器上下文的 pluginContainer.resolve 方法，路径解析插件处理
           const resolved = await this.resolve(modSource, id);
-
+          
           if (resolved) {
             ms.overwrite(modeStart, modEnd, resolved.id);
+            importedModules.add(resolved.id)
           }
         }
       }
+
+      moduleGraph.updateModuleInfo(curMod, importedModules)
 
       return {
         code: ms.toString(),

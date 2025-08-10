@@ -8,7 +8,7 @@ import { isWindows, resolveWindowPath } from "../../utils";
 import { DEFAULT_EXTERSIONS } from "../const";
 import picocolors from "picocolors";
 
-/** 返回一个插件，能够根据 importer 的 id 解析得到文件的绝对路径 */
+/** 返回一个插件，能够根据 importer 的 id 解析得到文件的相对路径 */
 export function resolvePlugin(): Plugin {
   let serverContext: ServerContext;
   return {

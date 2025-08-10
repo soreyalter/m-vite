@@ -18,10 +18,15 @@ export async function transfromRequest(
   url: string,
   serverContext: ServerContext
 ) {
-  const { pluginContainer } = serverContext;
+  const { pluginContainer, moduleGraph } = serverContext;
   
-  // 清理 URL，移除查询参数和哈希，得到纯净的模块路径
   url = cleanUrl(url);
+
+  // 缓存命中直接返回之前 transform 好的结果
+  let mod = await moduleGraph.getModuleByUrl(url)
+  if (mod && mod.transformResult) {
+    return mod.transformResult
+  }
 
   // 第一步：模块解析 (resolve) 将相对/绝对路径或裸模块名解析为具体的文件路径
   // 例如：'./App.tsx' -> '/path/to/src/App.tsx', 
@@ -29,8 +34,8 @@ export async function transfromRequest(
   const resolveResult = await pluginContainer.resolveId(url);
   
   let transfromResult;
+  // 第二步：模块加载 (load) 根据解析得到的文件路径读取模块内容
   if (resolveResult?.id) {
-    // 第二步：模块加载 (load) 根据解析得到的文件路径读取模块内容
     // 可能从文件系统读取，也可能是插件生成的虚拟模块内容
     let code = await pluginContainer.load(resolveResult.id);
     
@@ -38,6 +43,9 @@ export async function transfromRequest(
     if (typeof code === "object" && code !== null) {
       code = code.code; // 提取对象中的 code 字段
     }
+
+    // 注册模块到依赖图中
+    mod = await moduleGraph.ensureEntryFromUrl(url)
     
     if (code) {
       // 第三步：模块转换 (transform)
@@ -46,6 +54,11 @@ export async function transfromRequest(
         code as string,
         resolveResult.id
       );
+    }
+
+    // 将转换好的结果缓存到依赖图中
+    if (mod) {
+      mod.transformResult = transfromResult
     }
   }
   

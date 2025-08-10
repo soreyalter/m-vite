@@ -1,5 +1,6 @@
 import connect from "connect";
 import { blue, green } from "picocolors";
+import chokidar, { FSWatcher } from "chokidar";
 
 import { optimizer } from "../optimizer";
 import { createPluginContainer, PluginContainer } from "../pluginContainer";
@@ -8,6 +9,9 @@ import { resolvePlugins } from "../plugins";
 import { indexHtmlMiddware } from "./middlewares/indexHtml";
 import { transformMiddleWare } from "./middlewares/transform";
 import { staticMiddleWare } from "./middlewares/static";
+import { ModuleGraph } from "../ModuleGraph";
+import { createWebSocketServer, WSMethods } from "../ws";
+import { bindingHMREvents } from "../hmr";
 
 export interface ServerContext {
   /** server 启动的工作目录 */
@@ -18,6 +22,12 @@ export interface ServerContext {
   app: connect.Server;
   /** 服务器插件 */
   plugins: Plugin[];
+  /** 依赖图 */
+  moduleGraph: ModuleGraph;
+  /** HMR 使用的 websocket 连接 */
+  ws: WSMethods;
+  /** 监听文件变化的监听器 */
+  watcher: FSWatcher;
 }
 
 export async function startDevServer() {
@@ -26,16 +36,31 @@ export async function startDevServer() {
   const root = process.cwd();
   const startTime = Date.now();
 
+  // HMR 资源
+  const watcher = chokidar.watch(root, {
+    ignored: ["**/node_modules/**", "**/.git/**"],
+    ignoreInitial: true,
+  });
+  const ws = createWebSocketServer();
+
   // 引入插件
   const plugins = resolvePlugins();
   const pluginContainer = createPluginContainer(plugins);
 
+  // 初始化依赖图
+  const moduleGraph = new ModuleGraph((url) => pluginContainer.resolveId(url));
+
+  /** server 的上下文，用来保存一些通用的可能会用到的配置 */
   const serverContext: ServerContext = {
     root: process.cwd(),
     app,
     pluginContainer,
     plugins,
+    moduleGraph,
+    ws,
+    watcher,
   };
+  bindingHMREvents(serverContext);
 
   for (const plugin of plugins) {
     if (plugin.configureServer) {
@@ -43,11 +68,11 @@ export async function startDevServer() {
     }
   }
   // 核心编译逻辑（js文件）
-  app.use(transformMiddleWare(serverContext))
+  app.use(transformMiddleWare(serverContext));
   // 入口 HTML
-  app.use(indexHtmlMiddware(serverContext))
+  app.use(indexHtmlMiddware(serverContext));
   // 处理具体静态资源的中间件
-  app.use(staticMiddleWare())
+  app.use(staticMiddleWare());
 
   app.listen(3000, async () => {
     await optimizer(root);

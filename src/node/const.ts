@@ -1,4 +1,4 @@
-import path from 'path';
+import path from "path";
 
 /**
  * 不需要预构建的静态资源和业务代码
@@ -28,9 +28,11 @@ export const EXTERNAL_TYPES = [
 /** 裸模块导入 */
 export const BARE_IMPORT_RE = /^[\w@][^:]/;
 /** 预构建路径：node_modules/.m-vite */
-export const PRE_BUNDLE_DIR = path.join('node_modules', '.m-vite')
+export const PRE_BUNDLE_DIR = path.join("node_modules", ".m-vite");
 
-export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
-export const QEURY_RE = /\?.*$/s
-export const HASH_RE = /#.*$/s
+export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/;
+export const QEURY_RE = /\?.*$/s;
+export const HASH_RE = /#.*$/s;
 export const DEFAULT_EXTERSIONS = [".tsx", ".ts", ".jsx", "js"];
+export const HMR_PORT = 24678
+export const CLIENT_PUBLIC_PATH = "/@vite/client";

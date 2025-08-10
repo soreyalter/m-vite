@@ -37,10 +37,9 @@ export const cleanUrl = (url: string): string => {
   return url.replace(HASH_RE, "").replace(QEURY_RE, "");
 };
 
+/** 将传入的 url 转化为 posix 格式的相对路径 */
 export function resolveWindowPath(url: string) {
-  const normalurl = slash(url);
-
-  const relativePath = path.posix.relative(slash(process.cwd()), normalurl);
+  const relativePath = slash(path.relative(process.cwd(), url));
 
   //  D:/Developer/mini-vite/playground/src/App.tsx 会被解析成 src/App.tsx，但相对路径必需以/或者.开头
   if (relativePath.startsWith(".") || relativePath.startsWith("/")) {
