@@ -67,7 +67,7 @@ export async function startDevServer() {
       await plugin.configureServer(serverContext);
     }
   }
-  // 核心编译逻辑（js文件）
+  // 核心编译逻辑（各种文件）
   app.use(transformMiddleWare(serverContext));
   // 入口 HTML
   app.use(indexHtmlMiddware(serverContext));

@@ -5,7 +5,7 @@ import path from "path";
 
 import { Plugin } from "../plugin";
 import { ServerContext } from "../server";
-import { isJSRequest, normalizePath } from "../../utils";
+import { isInternalRequest, isJSRequest, normalizePath } from "../../utils";
 import { BARE_IMPORT_RE, PRE_BUNDLE_DIR } from "../const";
 
 /** 重写 js 文件的 import 路径 */
@@ -18,7 +18,7 @@ export function importAnalysisPlugin(): Plugin {
     },
     /** 处理import语句 */
     async transform(this: PluginContext, code: string, id: string) {
-      if (!isJSRequest(id)) {
+      if (!isJSRequest(id) || isInternalRequest(id)) {
         return null;
       }
       await init;
@@ -36,7 +36,7 @@ export function importAnalysisPlugin(): Plugin {
         const { s: modeStart, e: modEnd, n: modSource } = importInfo;
         if (!modSource) continue;
 
-        // 给 .svg 导入路径结尾加上一个 "?import" 标记
+        // 给 import 语法的.svg 导入路径结尾加上一个 "?import" 标记
         if (modSource.endsWith(".svg")) {
           // 求一个标准化的相对路径
           const resolvedUrl = normalizePath(

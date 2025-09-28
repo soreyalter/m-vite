@@ -131,3 +131,30 @@ ESBuild 内部使用 `namespace:path` 的格式来唯一标识一个模块.
 "/project/node_modules/react/index.js" 
 ```
 
+# 热更新 HMR
+
+完整流程
+
+1. 开发者修改 `App.jsx`
+   ↓
+2. 文件监听器检测到变化
+   ↓  
+3. 服务器通过 WebSocket 推送更新消息
+   ↓
+4. 客户端接收消息，调用 `import.meta.hot.accept()`
+   ↓
+5. 重新加载模块，保持页面状态
+
+## 初始化（WS 连接和依赖图）
+
+由客户端来发起 ws 连接，要做到这一点，需要往客户端文件注入对应的发起连接的脚本`client.ts`.
+
+由于服务端不使用这个文件，所以要将其添加到 tsup 配置的打包入口，使其能够被编译输出为 `.mjs` 文件。
+
+1. 用户访问 http://localhost:3000/
+2. HTML `index.html`入口文件处理：`indexHtmlMiddware` 调用 `transformIndexHtml`
+3. 脚本注入：HTML 中被注入 `<script type="module" src="/@vite/client"></script>`
+4. 客户端请求：浏览器请求 `/@vite/client` 模块
+5. 模块解析：`resolveId` 钩子识别虚拟模块
+6. 代码加载：`load` 钩子提供实际的客户端代码
+7. HMR 连接：客户端代码执行，建立 WebSocket 连接

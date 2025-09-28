@@ -32,6 +32,7 @@ export function clientInjectPlugin(): Plugin {
         };
       }
     },
+    // 会在请求入口 html 时就被调用，注入这个脚本
     transformIndexHtml(raw) {
       // 插入客户端的脚本，即在 head 标签后加上这一行 script 标签
       return raw.replace(

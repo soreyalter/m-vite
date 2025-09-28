@@ -1,8 +1,11 @@
 import os from "os";
 import path from "path";
-import { HASH_RE, JS_TYPES_RE, QEURY_RE } from "./node/const";
-import picocolors from "picocolors";
-import { url } from "inspector";
+import {
+  CLIENT_PUBLIC_PATH,
+  HASH_RE,
+  JS_TYPES_RE,
+  QEURY_RE,
+} from "./node/const";
 
 /** 将字符串中的 \ 替换成 / */
 export function slash(p: string): string {
@@ -58,3 +61,8 @@ export const isImportRequset = (url: string): boolean =>
 export const removeImportQuery = (url: string): string => {
   return url.replace(/\?import/, "");
 };
+
+const INTERNAL_LIST = [CLIENT_PUBLIC_PATH, "/@react-refresh"];
+export function isInternalRequest(url: string): boolean {
+  return INTERNAL_LIST.includes(url);
+}

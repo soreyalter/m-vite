@@ -65,7 +65,7 @@ export async function transfromRequest(
   return transfromResult;
 }
 
-/** 将 GET 泛 js 文件的请求进行转换 */
+/** 将 GET 文件的请求进行转换 */
 export function transformMiddleWare(
   serverContext: ServerContext
 ): NextHandleFunction {
